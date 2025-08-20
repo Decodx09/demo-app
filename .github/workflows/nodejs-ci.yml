@@ -58,7 +58,7 @@ jobs:
     strategy:
       matrix:
         host: 
-            - 'ec2-3-144-128-211.us-east-2.compute.amazonaws.com'
+          - 'ec2-3-144-128-211.us-east-2.compute.amazonaws.com'
     steps:
       - name: Convert repository name to lowercase
         id: repo
@@ -70,8 +70,11 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           port: 22
-          timeout: 60s
+          timeout: 300s            # Increased timeout for handshake reliability
+          command_timeout: 20m     # Supports longer deploy time if needed
+          script_stop: false       # Don't fail immediately if one command fails
           script: |
+            sleep $((RANDOM % 10 + 5))
             echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker pull ghcr.io/${{ steps.repo.outputs.repository }}:latest
             docker stop sauth-app || true
