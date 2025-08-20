@@ -32,7 +32,7 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     outputs:
-      image: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      image: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -41,13 +41,16 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.CR_PAT }}
+      - name: Convert repository name to lowercase
+        id: repo
+        run: echo "repository=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
       - uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:${{ github.sha }}
-            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ steps.repo.outputs.repository }}:${{ github.sha }}
+            ghcr.io/${{ steps.repo.outputs.repository }}:latest
 
   deploy:
     needs: [security-scan, build-and-push]
@@ -55,8 +58,12 @@ jobs:
     strategy:
       matrix:
         host: 
-          - ec2-3-144-128-211.us-east-2.compute.amazonaws.com
+          - ec2-13-58-60-124.us-east-2.compute.amazonaws.com
+          - ec2-18-216-75-38.us-east-2.compute.amazonaws.com
     steps:
+      - name: Convert repository name to lowercase
+        id: repo
+        run: echo "repository=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -67,9 +74,9 @@ jobs:
           timeout: 60s
           script: |
             echo "${{ secrets.CR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker pull ghcr.io/${{ github.repository }}:latest
+            docker pull ghcr.io/${{ steps.repo.outputs.repository }}:latest
             docker stop sauth-app || true
             docker rm sauth-app || true
             docker run -d -p 3000:3000 --name sauth-app --restart always \
-              ghcr.io/${{ github.repository }}:latest
+              ghcr.io/${{ steps.repo.outputs.repository }}:latest
             echo "Deployed on ${{ matrix.host }} - http://${{ matrix.host }}:3000"
