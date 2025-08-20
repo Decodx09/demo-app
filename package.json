@@ -2,11 +2,11 @@
   "name": "sauth-demo",
   "version": "1.0.0",
   "description": "Simple Node.js app for CI/CD pipeline demo",
-  "main": "app.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node app.js",
+    "start": "node server.js",
     "test": "jest",
-    "dev": "nodemon app.js"
+    "dev": "nodemon server.js"
   },
   "dependencies": {
     "express": "^4.18.2"
@@ -17,6 +17,6 @@
     "nodemon": "^3.0.0"
   },
   "keywords": ["auth", "demo", "cicd"],
-  "author": "Shivansh Sukhija",
+  "author": "Your Name",
   "license": "MIT"
 }
